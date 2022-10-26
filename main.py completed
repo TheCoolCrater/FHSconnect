@@ -1,0 +1,61 @@
+from operator import truediv
+import os 
+from datetime import datetime
+from email.message import EmailMessage
+import ssl
+import smtplib
+
+
+lap = 1
+# resp = os.popen("ping -n 1 192.168.1.1")
+
+
+while lap <= 5:
+    TIME = datetime.now() #.strftime('%y-%m-%d %H_%M_%S')
+    resp = os.popen("ping -n 100 192.168.1.1")
+    with open(f"ping_report_{lap}.txt", "w") as file:
+        file.write(f'Ping Time: {TIME}\n')
+        for x in resp:
+            file.write(f'Ping Response: {x}')
+
+        lap += 1
+        file = "ping_report_{lap}.txt"
+    with open(file, "r") as fp:
+        for l_no, line in enumerate(fp):
+            if "% loss" in line:
+                print(f"String Found in: {file}")
+                print(f"line number:", l_no)
+                print("line:", line)
+                indx = line.index("%")
+                print(indx)
+                loss = float(line[indx-3: indx].replace("(",""))
+                print(loss)
+                if loss >= 15:
+                    print(f"Wifi Is Failing. Packet Loss is At: {loss}")
+
+                    email_sender = 'EMAIL'
+                    email_password = "EMAIL PASS"
+                    email_receiver = 'EMAIL-PHONE'
+
+                    subject = "WIFI Fail"
+                    body = f"""
+                    wifi is failing. packet loss is at: {loss}
+
+                    """
+
+                    em = EmailMessage()
+                    em['From'] = email_sender
+                    em['To'] = email_receiver
+                    em[' subject'] = subject
+                    em.set_content(body)
+
+
+                    context = ssl.create_default_context()
+
+                    with smtplib.SMTP_SSL( 'smtp.gmail.com' , 465, context=context) as smtp:
+                        smtp.login(email_sender, email_password)
+                        smtp.sendmail(email_sender, email_receiver, em.as_string())
+
+
+                else:
+                    print(f"Wifi Is Online. Current packet loss is at: {loss} ")
