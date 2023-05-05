@@ -1,0 +1,85 @@
+import os
+import subprocess
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def ping(ip, count):
+    """
+    Function to ping an IP address and return the packet loss percentage.
+    """
+    response = subprocess.Popen(["ping", "-n", str(count), "-w", "2000", ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output = response.communicate()[0].decode('utf-8')
+    packet_loss = float(output.split('Lost')[1].split('(')[1].split('%')[0])
+    return packet_loss
+
+def check_google():
+    """
+    Function to check if Google is working by trying to log in and log out.
+    """
+    # You can modify this function to use your own Google account details.
+    # Please note that this code is for educational purposes only and you should not share your Google account details.
+    try:
+        smtp_server = 'smtp.gmail.com'
+        smtp_port = 587
+        smtp_username = 'your_email@gmail.com'
+        smtp_password = 'your_password'
+        
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.ehlo()
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.quit()
+        return True
+    except:
+        return False
+
+def send_email(packet_loss, filename):
+    """
+    Function to send an email with the packet loss and the name of the file.
+    """
+    from_email = 'your_email@gmail.com'
+    to_email = 'recipient_email@gmail.com'
+    password = 'your_password'
+
+    msg = MIMEMultipart()
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = 'Ping Report'
+
+    body = f'Packet loss: {packet_loss}%'
+    msg.attach(MIMEText(body, 'plain'))
+
+    with open(filename, 'rb') as f:
+        attachment = MIMEText(f.read())
+        attachment.add_header('Content-Disposition', 'attachment', filename=filename)
+        msg.attach(attachment)
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(from_email, password)
+    text = msg.as_string()
+    server.sendmail(from_email, to_email, text)
+    server.quit()
+
+if __name__ == '__main__':
+    ip = '8.8.8.8'
+    count = 100
+    filename = f'ping_report_{count}.txt'
+    packet_loss = ping(ip, count)
+    
+    with open(filename, 'w') as f:
+        f.write(f'Packet loss: {packet_loss}%\n')
+    
+    if packet_loss >= 3:
+        if check_google():
+            with open(filename, 'a') as f:
+                f.write('Google success\n')
+        else:
+            with open(filename, 'a') as f:
+                f.write('Google failure\n')
+    
+        send_email(packet_loss, filename)
+        
+    if packet_loss < 3:
+        os.remove(filename)
