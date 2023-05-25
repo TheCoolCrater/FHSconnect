@@ -7,8 +7,8 @@ from datetime import datetime
 from email.message import EmailMessage
 from operator import truediv
 
-ct = "Ethernet"
-room = "L512"
+ct = "Wireless" #Change To Ethernet Or Wireless
+room = "L512" #Change To Room ID/Number
 lap = 1
 
 while True:
